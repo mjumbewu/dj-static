@@ -78,8 +78,14 @@ class Cling(WSGIHandler):
         return path.startswith(self.base_url[2]) and not self.base_url[1]
 
     def __call__(self, environ, start_response):
+        try:
+            path_info = get_path_info(environ)
+        except UnicodeDecodeError:
+            start_response('400 Bad Request', [('Content-type', 'text/plain')])
+            return ['Invalid URL'.encode()]
+
         # Hand non-static requests to Django
-        if not self._should_handle(get_path_info(environ)):
+        if not self._should_handle(path_info):
             return self.application(environ, start_response)
 
         # Serve static requests from static.Cling
